@@ -45,17 +45,17 @@ internal struct OutputFile {
     }
     
     func write(_ data: Data) throws {
-        try data.withUnsafeBytes { (p: UnsafePointer<UInt8>) -> Void in
-            var p = p
-            var c = data.count
+        try data.withUnsafeBytes { (buf: UnsafeRawBufferPointer) -> Void in
+            var p = buf.baseAddress
+            var c = buf.count
             while c > 0 {
-                let r = Darwin.write(fileHandle.fileDescriptor, UnsafeRawPointer(p), c)
+                let r = Darwin.write(fileHandle.fileDescriptor, p, c)
                 if r == -1 {
                     throw POSIXError(POSIXErrorCode(rawValue: errno)!)
                 }
                 precondition(r > 0 && r <= c)
                 c -= r
-                p += r
+                p = p?.advanced(by: r)
             }
         }
     }
